@@ -1,11 +1,6 @@
 package sanchez.sanchez.sergio.brownie.ble.connect.strat.impl
 
 import android.content.Context
-import sanchez.sanchez.sergio.brownie.ble.ConnectCallback
-import sanchez.sanchez.sergio.brownie.ble.models.devices.BleDevice
-import sanchez.sanchez.sergio.brownie.ble.scan.listener.IScanListener
-import sanchez.sanchez.sergio.brownie.ble.scan.strat.impl.ScannerGattTime
-import sanchez.sanchez.sergio.brownie.ble.scan.filters.BleFilter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
@@ -14,12 +9,16 @@ import sanchez.sanchez.sergio.brownie.ble.connect.listener.OnFailConnectionListe
 import sanchez.sanchez.sergio.brownie.ble.connect.listener.OnSuccessConnectionListener
 import sanchez.sanchez.sergio.brownie.ble.connect.strat.IConnectWaitUser
 import sanchez.sanchez.sergio.brownie.ble.ext.connect
+import sanchez.sanchez.sergio.brownie.ble.models.devices.BleDevice
+import sanchez.sanchez.sergio.brownie.ble.scan.IBleFilter
+import sanchez.sanchez.sergio.brownie.ble.scan.listener.IScanListener
+import sanchez.sanchez.sergio.brownie.ble.scan.strat.impl.ScannerGattTime
 
 /**
  * Connect Wait User
  */
 class ConnectWaitUser (
-    val bleFilter : BleFilter
+    val bleFilter : IBleFilter
 ) : IConnectWaitUser, IScanListener, OnSuccessConnectionListener, CoroutineScope by MainScope() {
 
     /** ATTRIBUTES **/
@@ -27,9 +26,11 @@ class ConnectWaitUser (
 
     lateinit var connectListener : OnFailConnectionListener
 
-    var scanner : ScannerGattTime = ScannerGattTime(bleFilter)
+    private val scanner : ScannerGattTime by lazy {
+        ScannerGattTime(bleFilter)
+    }
 
-    var bleDevicesToConnectTo : MutableList<BleDevice> = mutableListOf<BleDevice>()
+    var bleDevicesToConnectTo : MutableList<BleDevice> = mutableListOf()
 
     var lastConnectTrialSuccess : Boolean = false
 
@@ -42,27 +43,35 @@ class ConnectWaitUser (
      * IConnecWaitUser methods
      ************************************************/
 
+    /**
+     * Scan
+     * @param context
+     * @param connectListener
+     * @param scanPeriodInMillis
+     */
     override fun scan(context : Context, connectListener : OnFailConnectionListener, scanPeriodInMillis : Long){
         this.context = context
         this.connectListener = connectListener
         scanner.scan(this, scanPeriodInMillis)
     }
 
+    /**
+     * Connect
+     * @param bleDevice
+     */
     override fun connect(bleDevice : BleDevice){
         bleDevicesToConnectTo.add(bleDevice)
-
-        val callback = ConnectCallback(bleDevice, this)
 
         launch {
 
             lastConnectTrialSuccess = false
 
-            bleDevice.connect(context, callback)
+            bleDevice.connect(context, this@ConnectWaitUser)
 
             delay (MAX_TIME_TO_WAIT_FOR_A_CONNECTION)
 
             if (!lastConnectTrialSuccess){
-                connectListener?.onFailConnection(bleDevice)
+                connectListener.onFailConnection(bleDevice)
             }
         }
     }
@@ -72,7 +81,7 @@ class ConnectWaitUser (
      * IScanListener methods
      ************************************************/
 
-    override fun onFinishScan(bleFilter: BleFilter){
+    override fun onFinishScan(bleFilter: IBleFilter){
         this.connectListener.onFinishScan(bleFilter)
     }
 

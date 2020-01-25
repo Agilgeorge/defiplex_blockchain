@@ -17,6 +17,7 @@ import sanchez.sanchez.sergio.brownie.ble.scan.strat.IScanner
  */
 class ScannerGattFirst(private val filter: BleFilter) : IScanner, ScanCallback() {
 
+
     /** ATTRIBUTES **/
     private lateinit var scanResultsListener: IScanListener
     private lateinit var scanJob : Job
@@ -49,8 +50,10 @@ class ScannerGattFirst(private val filter: BleFilter) : IScanner, ScanCallback()
                 listener.onErrorScan(0)
             }
         }
+    }
 
-
+    override fun stop() {
+        BleScannerManager.stopScan(this)
     }
 
 
@@ -59,17 +62,15 @@ class ScannerGattFirst(private val filter: BleFilter) : IScanner, ScanCallback()
      ************************************************/
 
     override fun onScanResult(callbackType: Int, result: ScanResult) {
-
         if (filter.passFilter(result)){
             scanJob.cancel()
-            BleScannerManager.stopScan(this)
+            stop()
         }
     }
 
 
     override fun onScanFailed(errorCode: Int) {
-
-        BleScannerManager.stopScan(this@ScannerGattFirst)
+        stop()
         scanResultsListener.onErrorScan(errorCode)
     }
 

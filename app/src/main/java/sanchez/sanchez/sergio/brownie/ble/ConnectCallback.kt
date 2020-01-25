@@ -8,7 +8,9 @@ import sanchez.sanchez.sergio.brownie.ble.models.devices.BleDevice
 /**
  * Connect Callback
  */
-class ConnectCallback (val bleDevice : BleDevice, var onConnectionListener : OnSuccessConnectionListener
+class ConnectCallback (
+    val bleDevice : BleDevice,
+    var onConnectionListener : OnSuccessConnectionListener
 ) : BluetoothGattCallback(){
 
 

@@ -1,14 +1,15 @@
 package sanchez.sanchez.sergio.brownie.ble.ext
 
-import android.bluetooth.BluetoothGattCallback
 import android.content.Context
+import sanchez.sanchez.sergio.brownie.ble.ConnectCallback
+import sanchez.sanchez.sergio.brownie.ble.connect.listener.OnSuccessConnectionListener
 import sanchez.sanchez.sergio.brownie.ble.models.devices.BleDevice
 
 /**
  * Connect to Ble Device
  */
-fun BleDevice.connect(context : Context, callback : BluetoothGattCallback) {
-    device.connectGatt(context, false, callback)
+fun BleDevice.connect(context : Context, connectionListener : OnSuccessConnectionListener) {
+    device.connectGatt(context, false, ConnectCallback(this, connectionListener))
 }
 
 /**

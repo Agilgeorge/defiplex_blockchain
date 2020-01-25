@@ -4,9 +4,9 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.util.Log
-import sanchez.sanchez.sergio.brownie.ble.scan.filters.BleFilter
 import kotlinx.coroutines.Job
 import sanchez.sanchez.sergio.brownie.ble.scan.BleScannerManager
+import sanchez.sanchez.sergio.brownie.ble.scan.IBleFilter
 import sanchez.sanchez.sergio.brownie.ble.scan.listener.IScanListener
 import sanchez.sanchez.sergio.brownie.ble.scan.strat.IScanner
 
@@ -15,7 +15,7 @@ import sanchez.sanchez.sergio.brownie.ble.scan.strat.IScanner
  * Scan strategy associated with multiple results of scan.
  * The filters apply in start Scan.
  */
-class ScannerGattTime(private val filter: BleFilter) : IScanner, ScanCallback() {
+class ScannerGattTime(private val filter: IBleFilter) : IScanner, ScanCallback() {
 
     /** ATTRIBUTES **/
     private lateinit var scanResultsListener: IScanListener
@@ -40,7 +40,6 @@ class ScannerGattTime(private val filter: BleFilter) : IScanner, ScanCallback() 
 
 
         scanJob.invokeOnCompletion {
-
             try {
                 if (filter.hasAtLeastOneMatchInAnyService()) {
                     listener.onFinishScan(filter)
@@ -55,6 +54,9 @@ class ScannerGattTime(private val filter: BleFilter) : IScanner, ScanCallback() 
 
     }
 
+    override fun stop() {
+        BleScannerManager.stopScan(this)
+    }
 
     /************************************************
      * ScanCallback methods
@@ -67,7 +69,7 @@ class ScannerGattTime(private val filter: BleFilter) : IScanner, ScanCallback() 
 
     override fun onScanFailed(errorCode: Int) {
         Log.d("LOGBLE", "Scanner Error -> $errorCode")
-        BleScannerManager.stopScan(this@ScannerGattTime)
+        stop()
         scanResultsListener.onErrorScan(errorCode)
     }
 
@@ -76,8 +78,4 @@ class ScannerGattTime(private val filter: BleFilter) : IScanner, ScanCallback() 
 
     }
 
-
-    fun stop() {
-        BleScannerManager.stopScan(this)
-    }
 }

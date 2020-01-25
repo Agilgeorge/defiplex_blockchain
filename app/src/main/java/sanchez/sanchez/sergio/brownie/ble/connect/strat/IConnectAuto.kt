@@ -13,4 +13,6 @@ interface IConnectAuto {
      * @param scanPeriodInMillis
      */
     fun scanAndConnect(context : Context, scanPeriodInMillis : Long)
+
+    fun cancel()
 }

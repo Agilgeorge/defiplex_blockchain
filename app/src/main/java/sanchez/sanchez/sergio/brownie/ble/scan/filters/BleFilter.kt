@@ -45,10 +45,24 @@ class BleFilter (
     }
 
     /**
+     * Has At Least One Match In Any Service
+     */
+    override fun hasAtLeastOneMatchInAnyService() : Boolean {
+        var result : Boolean = false
+        for (gattServiceFilter in gattServiceFilters){
+            if (gattServiceFilter.bleScanResultsPassed.size > 0){
+                result = true
+                break
+            }
+        }
+        return result
+    }
+
+    /**
      * Find Ble Devices For Gatt Service
      * @param gattService
      */
-    fun findBleDevicesForGattService(gattService : GattService) : MutableList<BleDevice>{
+    override fun findBleDevicesForGattService(gattService : GattService) : MutableList<BleDevice>{
         var result : MutableList<BleDevice> = mutableListOf()
 
         for (gattServiceFilter in gattServiceFilters) {
@@ -63,7 +77,7 @@ class BleFilter (
     /**
      * Find First Ble Device For Each Service
      */
-    fun findFirstBleDeviceForEachService() : MutableList<BleDevice> {
+    override fun findFirstBleDeviceForEachService() : MutableList<BleDevice> {
         val result : MutableList<BleDevice> = mutableListOf()
 
         for (gattServiceFilter in gattServiceFilters) {
@@ -74,19 +88,7 @@ class BleFilter (
         return result
     }
 
-    /**
-     * Has At Least One Match In Any Service
-     */
-    fun hasAtLeastOneMatchInAnyService() : Boolean {
-        var result : Boolean = false
-        for (gattServiceFilter in gattServiceFilters){
-            if (gattServiceFilter.bleScanResultsPassed.size > 0){
-                result = true
-                break
-            }
-        }
-        return result
-    }
+
 
 
     /**

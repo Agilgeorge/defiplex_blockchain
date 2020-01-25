@@ -1,7 +1,7 @@
 package sanchez.sanchez.sergio.brownie.ble.connect.listener
 
 import sanchez.sanchez.sergio.brownie.ble.models.devices.BleDevice
-import sanchez.sanchez.sergio.brownie.ble.scan.filters.BleFilter
+import sanchez.sanchez.sergio.brownie.ble.scan.IBleFilter
 
 /**
  * Fail Connection Listener
@@ -17,7 +17,7 @@ interface OnFailConnectionListener {
      * on finish scan
      * @param bleFilter
      */
-    fun onFinishScan(bleFilter: BleFilter)
+    fun onFinishScan(bleFilter: IBleFilter)
 
     /**
      * on fail connection

@@ -1,6 +1,6 @@
 package sanchez.sanchez.sergio.brownie.ble.scan.listener
 
-import sanchez.sanchez.sergio.brownie.ble.scan.filters.BleFilter
+import sanchez.sanchez.sergio.brownie.ble.scan.IBleFilter
 
 
 /**
@@ -12,11 +12,14 @@ interface IScanListener {
 
     /**
      * Events that notifies the scan finished
-     * @param listBleDevices
+     * @param bleFilter
      */
-    fun onFinishScan(bleFilter: BleFilter)
+    fun onFinishScan(bleFilter: IBleFilter)
 
 
+    /**
+     * On Finish Scan No Result
+     */
     fun onFinishScanNoResult()
 
     /**

@@ -1,11 +1,7 @@
 package sanchez.sanchez.sergio.brownie.ble.connect.strat.impl
 
 import android.content.Context
-import sanchez.sanchez.sergio.brownie.ble.ConnectCallback
-import sanchez.sanchez.sergio.brownie.ble.models.devices.BleDevice
-import sanchez.sanchez.sergio.brownie.ble.scan.listener.IScanListener
-import sanchez.sanchez.sergio.brownie.ble.scan.strat.impl.ScannerGattTime
-import sanchez.sanchez.sergio.brownie.ble.scan.filters.BleFilter
+import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
@@ -14,23 +10,33 @@ import sanchez.sanchez.sergio.brownie.ble.connect.listener.OnFailConnectionListe
 import sanchez.sanchez.sergio.brownie.ble.connect.listener.OnSuccessConnectionListener
 import sanchez.sanchez.sergio.brownie.ble.connect.strat.IConnectAuto
 import sanchez.sanchez.sergio.brownie.ble.ext.connect
+import sanchez.sanchez.sergio.brownie.ble.models.devices.BleDevice
+import sanchez.sanchez.sergio.brownie.ble.scan.IBleFilter
+import sanchez.sanchez.sergio.brownie.ble.scan.filters.BleFilter
+import sanchez.sanchez.sergio.brownie.ble.scan.listener.IScanListener
+import sanchez.sanchez.sergio.brownie.ble.scan.strat.impl.ScannerGattTime
 
 /**
  * Connect Auto Time
  */
 class ConnectAutoTime (
-        val bleFilter : BleFilter,
-        var connectListener : OnFailConnectionListener? = null,
-        var isCancelled : Boolean = false
+    private val bleFilter : BleFilter,
+    var connectListener : OnFailConnectionListener? = null,
+    var isCancelled : Boolean = false
 ) : IConnectAuto, IScanListener, OnSuccessConnectionListener, CoroutineScope by MainScope() {
+
+    private val TAG = "CONNECT_AUTO"
+
 
     /** ATTRIBUTES **/
     lateinit var context : Context
-    var scanner : ScannerGattTime = ScannerGattTime(bleFilter)
 
-    lateinit var bleDevicesToConnectTo : MutableList<BleDevice>
+    // Scanner
+    private val scanner : ScannerGattTime by lazy {
+        ScannerGattTime(bleFilter)
+    }
 
-    var lastConnectTrialSuccess : Boolean = false
+    private var lastConnectTrialSuccess : Boolean = false
 
     /** OVERRIDE METHODS **/
 
@@ -40,51 +46,38 @@ class ConnectAutoTime (
 
     override fun scanAndConnect(context : Context, scanPeriodInMillis : Long){
         this.context = context
+        // Start Scan
         scanner.scan(this, scanPeriodInMillis)
+    }
+
+    override fun cancel() {
+        isCancelled = true
+        scanner.stop()
     }
 
     /************************************************
      * IScanListener methods
      ************************************************/
 
-    override fun onFinishScan(bleFilter: BleFilter){
-        println("LOGBLE - ConnectAutoTime.onFinishScan passed?: " + bleFilter.hasAtLeastOneMatchInAnyService())
+    override fun onFinishScan(bleFilter: IBleFilter){
+        Log.d(TAG, "ConnectAutoTime.onFinishScan passed?: " + bleFilter.hasAtLeastOneMatchInAnyService())
         connectListener?.onFinishScan(bleFilter)
 
-        bleDevicesToConnectTo = bleFilter.findFirstBleDeviceForEachService()
+        if (!isCancelled) {
 
-        if (bleDevicesToConnectTo.size > 0){
-            val bleDevice = bleDevicesToConnectTo.get(0)
-            println("LOGBLE - ConnectAutoTime.onFinishScan bledevice: " + bleDevice.address)
-
-            val callback = ConnectCallback(bleDevice, this)
-
-            launch {
-
-                lastConnectTrialSuccess = false
-
-                if (!isCancelled) {
-
-                    bleDevice.connect(context, callback)
-
-                    delay(MAX_TIME_TO_WAIT_FOR_A_CONNECTION)
-
-                    if (!lastConnectTrialSuccess) {
-                        connectListener?.onFailConnection(bleDevice)
-                    }
-                }
-            }
+            val bleDevicesToConnectTo = bleFilter.findFirstBleDeviceForEachService()
+            if (bleDevicesToConnectTo.isNotEmpty())
+                tryConnectToBleDevice(bleDevicesToConnectTo.first())
         }
     }
 
     override fun onFinishScanNoResult(){
-        println("LOGBLE - ConnectAutoTime.onFinishScanNoResult")
+        Log.d(TAG, "ConnectAutoTime.onFinishScanNoResult")
         connectListener?.onFinishScanNoResults()
     }
 
     override fun onErrorScan(error : Int){
-        println("LOGBLE - ConnectAutoTime.onErrorScan")
-        //connectListener?.onFinishScanNoResults()
+        Log.d(TAG, "ConnectAutoTime.onErrorScan")
     }
 
     /************************************************
@@ -94,10 +87,26 @@ class ConnectAutoTime (
     override fun onConnection(bleDevice: BleDevice){
         lastConnectTrialSuccess = true
     }
+    /**
+     * Private Methods
+     */
 
-    fun cancel() {
-        isCancelled = true
-        scanner.stop()
+    /**
+     * Try Connect To Ble Device
+     * @param bleDevice
+     */
+    private fun tryConnectToBleDevice(bleDevice: BleDevice) = launch {
+
+        lastConnectTrialSuccess = false
+
+        // Connect To BLE Device
+        bleDevice.connect(context, this@ConnectAutoTime)
+        // Wait for a connection
+        delay(MAX_TIME_TO_WAIT_FOR_A_CONNECTION)
+        if (!lastConnectTrialSuccess) {
+            Log.d(TAG, "Notify Last Connect fail")
+            connectListener?.onFailConnection(bleDevice)
+        }
     }
 
 

@@ -13,4 +13,9 @@ interface IScanner {
      * @param scanPeriodInMillis
      */
     fun scan(listener: IScanListener, scanPeriodInMillis : Long)
+
+    /**
+     * Stop Scanner
+     */
+    fun stop()
 }
